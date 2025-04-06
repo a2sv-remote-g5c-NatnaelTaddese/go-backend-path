@@ -22,17 +22,31 @@ var (
 	total, average float32
 )
 
+func getGradeColor(grade *float32) string {
+	switch {
+	case *grade < 49:
+		return Red
+	case *grade < 79:
+		return Yellow
+	default:
+		return Green
+	}
+}
+
 func calculateAverage() {
 	average = total / float32(n_subjects)
 	fmt.Print(Blue)
 	fmt.Println("------------------------------------")
-	fmt.Printf("Your average grade is %.2f\n", average)
+	fmt.Print("Your average grade is")
+	fmt.Print(getGradeColor(&average))
+	fmt.Printf(" %.2f\n", average)
 	fmt.Print(Reset)
 }
 
 func getAndValidateGrade(subject string) float32 {
 	var grade float32
 	for {
+
 		fmt.Print(Yellow, " Grade for ", subject, " ", Cyan)
 		fmt.Scanln(&grade)
 		if grade >= 0 && grade <= 100 {
@@ -45,12 +59,25 @@ func getAndValidateGrade(subject string) float32 {
 func getAndValidateSubject() string {
 	var subject string
 	for {
-		fmt.Print(Cyan, " Subject ")
+		fmt.Print(Cyan)
+		fmt.Printf("%15v", "Subject: ")
 		fmt.Scanln(&subject)
 		if subject != "" {
 			return subject
 		}
 		fmt.Println(Red, "Invalid subject. Please enter a valid subject.", Reset)
+	}
+}
+
+func displayGradeTable() {
+	fmt.Print(Blue)
+	fmt.Println("------------------------------------")
+	fmt.Printf("%10v : %4v \n", "SUBJECT", "GRADE")
+	fmt.Print(Green)
+
+	for subject, grade := range grades {
+		fmt.Printf("%10v : %4v \n", subject, grade)
+
 	}
 }
 
@@ -64,7 +91,7 @@ func main() {
 	fmt.Print("Please Enter your Name: ")
 	fmt.Scanln(&user_name)
 	fmt.Println(Purple, "Welcome", user_name, Reset)
-	print("How many subjects have you taken? ")
+	fmt.Print("How many subjects have you taken? ")
 	fmt.Scanln(&n_subjects)
 
 	for i := 0; i < n_subjects; i++ {
@@ -74,5 +101,6 @@ func main() {
 		total += grade
 	}
 
+	displayGradeTable()
 	calculateAverage()
 }

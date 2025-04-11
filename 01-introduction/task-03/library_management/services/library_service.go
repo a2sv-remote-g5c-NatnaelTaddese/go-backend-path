@@ -34,6 +34,7 @@ func NewLibraryService() LibraryManager {
 		nextMemberID: 1,
 	}
 }
+
 func (s *LibraryService) AddBook(book *models.Book) error {
 	for _, existingBook := range s.books {
 		if existingBook.Title == book.Title && existingBook.Author == book.Author {

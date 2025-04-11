@@ -2,7 +2,7 @@
 
 ## Overview
 
-![Demo](./docs/screenshots/demo.mp4)
+![Demo](./docs/screenshots/demo.gif)
 
 The Library Management System is a console-based application written in Go that helps manage books, members, and borrowing records in a library. This guide will help you get set up and running with the system.
 

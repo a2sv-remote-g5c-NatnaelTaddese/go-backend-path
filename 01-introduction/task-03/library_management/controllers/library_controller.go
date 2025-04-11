@@ -25,15 +25,15 @@ const (
 var choice int
 
 type LibraryController struct {
-	libraryService *services.LibraryService
+	libraryManager services.LibraryManager
 	input          bufio.Reader
 }
 
-func NewLibraryController(service *services.LibraryService) *LibraryController {
+func NewLibraryController(manager services.LibraryManager) *LibraryController {
 	fmt.Println(Cyan + "\nLibrary Management System Initialized" + Reset)
 
 	return &LibraryController{
-		libraryService: service,
+		libraryManager: manager,
 		input:          *bufio.NewReader(os.Stdin),
 	}
 }
@@ -43,6 +43,7 @@ func (c *LibraryController) Start() {
 	fmt.Println(Green + "Welcome to the Library Management System!" + Reset)
 
 	for {
+		fmt.Println("")
 		fmt.Println(Yellow + "\t1.  Add Book" + Reset)
 		fmt.Println(Yellow + "\t2.  Remove Book" + Reset)
 		fmt.Println(Yellow + "\t3.  Borrow Book" + Reset)
@@ -51,7 +52,7 @@ func (c *LibraryController) Start() {
 		fmt.Println(Yellow + "\t6.  List Borrowed Books\n" + Reset)
 
 		fmt.Println(Purple + "\t7.  Add Members" + Reset)
-		fmt.Println(Purple + "\t8.  Remove Members" + Reset)		
+		fmt.Println(Purple + "\t8.  Remove Members" + Reset)
 		fmt.Println(Purple + "\t9.  List Members" + Reset)
 		fmt.Println(Purple + "\t10. List Borrowed Books by Member\n" + Reset)
 
@@ -82,13 +83,13 @@ func (c *LibraryController) Start() {
 
 		case 6:
 			c.ListBorrowedBooks()
-		
+
 		case 7:
 			c.AddMember()
-		
+
 		case 8:
 			c.RemoveMember()
-		
+
 		case 9:
 			c.ListMembers()
 
@@ -108,8 +109,8 @@ func (c *LibraryController) AddBook() {
 	fmt.Println(Green + "Adding a new book..." + Reset)
 
 	book := &models.Book{}
-	
-	// valid title 
+
+	// valid title
 	for {
 		fmt.Print("Enter book title: ")
 		title, err := c.input.ReadString('\n')
@@ -117,7 +118,7 @@ func (c *LibraryController) AddBook() {
 			fmt.Println(Red + "Error reading input: " + err.Error() + Reset)
 			continue
 		}
-		
+
 		book.Title, err = utils.SanitizeTitle(title)
 		if err != nil {
 			fmt.Println(Red + "Error in title: " + err.Error() + Reset)
@@ -125,7 +126,7 @@ func (c *LibraryController) AddBook() {
 		}
 		break
 	}
-	
+
 	// valid author
 	for {
 		fmt.Print("Enter book author: ")
@@ -134,20 +135,20 @@ func (c *LibraryController) AddBook() {
 			fmt.Println(Red + "Error reading input: " + err.Error() + Reset)
 			continue
 		}
-		
+
 		author = strings.TrimSpace(author)
 		if author == "" {
 			fmt.Println(Red + "Author cannot be empty. Please try again." + Reset)
 			continue
 		}
-		
+
 		book.Author = author
 		break
 	}
 
 	book.Status = "available"
 
-	err := c.libraryService.AddBook(book)
+	err := c.libraryManager.AddBook(book)
 	if err != nil {
 		fmt.Println(Red + "Error adding book: " + err.Error() + Reset)
 	} else {
@@ -169,7 +170,7 @@ func (c *LibraryController) RemoveBook() {
 		break
 	}
 
-	err := c.libraryService.RemoveBook(bookID)
+	err := c.libraryManager.RemoveBook(bookID)
 	if err != nil {
 		fmt.Println(Red + "Error removing book: " + err.Error() + Reset)
 	} else {
@@ -205,7 +206,7 @@ func (c *LibraryController) BorrowBook() {
 		break
 	}
 
-	err := c.libraryService.BorrowBook(bookID, memberID)
+	err := c.libraryManager.BorrowBook(bookID, memberID)
 	if err != nil {
 		fmt.Println(Red + "Error borrowing book: " + err.Error() + Reset)
 	} else {
@@ -241,7 +242,7 @@ func (c *LibraryController) ReturnBook() {
 		break
 	}
 
-	err := c.libraryService.ReturnBook(bookID, memberID)
+	err := c.libraryManager.ReturnBook(bookID, memberID)
 	if err != nil {
 		fmt.Println(Red + "Error returning book: " + err.Error() + Reset)
 	} else {
@@ -252,7 +253,7 @@ func (c *LibraryController) ReturnBook() {
 func (c *LibraryController) ListAvailableBooks() {
 	fmt.Println(Green + "Listing available books..." + Reset)
 
-	books, err := c.libraryService.ListAvailableBooks()
+	books, err := c.libraryManager.ListAvailableBooks()
 	if err != nil {
 		fmt.Println(Red + "Error listing available books: " + err.Error() + Reset)
 		return
@@ -270,14 +271,14 @@ func (c *LibraryController) ListAvailableBooks() {
 		fmt.Printf("%-10d %-30s %-30s\n", book.ID, book.Title, book.Author)
 	}
 
-		fmt.Println(strings.Repeat("-", 70))
-		fmt.Println("\n" + Reset)
+	fmt.Println(strings.Repeat("-", 70))
+	fmt.Println("\n" + Reset)
 }
 
 func (c *LibraryController) ListBorrowedBooks() {
 	fmt.Println(Green + "Listing all borrowed books and their borrowers..." + Reset)
 
-	borrowedBooks, err := c.libraryService.ListAllBorrowedBooks()
+	borrowedBooks, err := c.libraryManager.ListAllBorrowedBooks()
 	if err != nil {
 		fmt.Println(Red + "Error listing borrowed books: " + err.Error() + Reset)
 		return
@@ -312,22 +313,22 @@ func (c *LibraryController) AddMember() {
 			fmt.Println(Red + "Error reading input: " + err.Error() + Reset)
 			continue
 		}
-		
+
 		name = strings.TrimSpace(name)
 		if name == "" {
 			fmt.Println(Red + "Name cannot be empty. Please try again." + Reset)
 			continue
 		}
-		
+
 		member.Name = name
 		break
 	}
 
-	memberID, err := c.libraryService.AddMember(member)
+	memberID, err := c.libraryManager.AddMember(member)
 	if err != nil {
 		fmt.Println(Red + "Error adding member: " + err.Error() + Reset)
 	} else {
-		fmt.Printf(Green + "Member added successfully! Member ID: %d\n" + Reset, memberID)
+		fmt.Printf(Green+"Member added successfully! Member ID: %d\n"+Reset, memberID)
 	}
 }
 
@@ -345,7 +346,7 @@ func (c *LibraryController) RemoveMember() {
 		break
 	}
 
-	err := c.libraryService.RemoveMember(memberID)
+	err := c.libraryManager.RemoveMember(memberID)
 	if err != nil {
 		fmt.Println(Red + "Error removing member: " + err.Error() + Reset)
 	} else {
@@ -356,7 +357,7 @@ func (c *LibraryController) RemoveMember() {
 func (c *LibraryController) ListMembers() {
 	fmt.Println(Green + "Listing members..." + Reset)
 
-	members, err := c.libraryService.ListMembers()
+	members, err := c.libraryManager.ListMembers()
 	if err != nil {
 		fmt.Println(Red + "Error listing members: " + err.Error() + Reset)
 		return
@@ -394,7 +395,7 @@ func (c *LibraryController) ListBorrowedBooksByMember() {
 		break
 	}
 
-	books, err := c.libraryService.ListBorrowedBooks(memberID)
+	books, err := c.libraryManager.ListBorrowedBooks(memberID)
 	if err != nil {
 		fmt.Println(Red + "Error listing borrowed books: " + err.Error() + Reset)
 		return

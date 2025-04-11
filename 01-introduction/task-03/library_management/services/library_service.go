@@ -10,7 +10,22 @@ type LibraryService struct {
 	nextMemberID int
 }
 
-func NewLibraryService() *LibraryService {
+type LibraryManager interface {
+	AddBook(book *models.Book) error
+	RemoveBook(bookID int) error
+	BorrowBook(bookID int, memberID int) error
+	ReturnBook(bookID int, memberID int) error
+	ListAvailableBooks() ([]*models.Book, error)
+	ListBorrowedBooks(memberID int) ([]*models.Book, error)
+
+	AddMember(member *models.Member) (int, error)
+	RemoveMember(memberID int) error
+	GetMember(memberID int) (*models.Member, error)
+	ListMembers() ([]*models.Member, error)
+	ListAllBorrowedBooks() ([]*models.BorrowedBookRecord, error)
+}
+
+func NewLibraryService() LibraryManager {
 	return &LibraryService{
 		books:        make(map[int]*models.Book),
 		members:      make(map[int]*models.Member),
@@ -132,12 +147,12 @@ func (s *LibraryService) ListAllBorrowedBooks() ([]*models.BorrowedBookRecord, e
 		if !exists {
 			continue
 		}
-		
+
 		member, exists := s.members[memberID]
 		if !exists {
 			continue
 		}
-		
+
 		borrowedBooks = append(borrowedBooks, &models.BorrowedBookRecord{
 			Book:     *book,
 			Borrower: *member,

@@ -1,73 +1,141 @@
-# Task Manager API
+# Task Manager API with JWT Authentication
 
-A simple RESTful API for managing tasks built with Go and Gin framework.
+A RESTful API for managing tasks built with Go, Gin framework, and JWT authentication for secure access.
 
 ## Project Structure
 
 ```
-task_manager/
-├── main.go               # Entry point of the application
-├── controllers/          # HTTP request handlers
-│   └── task_controller.go
-├── models/               # Data models
-│   └── task.go
-├── data/                 # Data access layer
-│   └── task_service.go
-├── router/               # API routes definition
-│   └── router.go
-├── docs/                 # Documentation
-│   └── api_documentation.md
-└── go.mod                # Go module definition
+jwt-authentication/
+├── main.go                 # Entry point of the application
+├── controllers/            # HTTP request handlers
+│   ├── controller.go       # Task controllers
+│   └── auth_controller.go  # Authentication controllers
+├── models/                 # Data models
+│   ├── task.go             # Task model
+│   └── user.go             # User model
+├── data/                   # Data access layer
+│   ├── database.go         # Database connection
+│   ├── task_service.go     # Task data operations
+│   └── user_service.go     # User data operations
+├── middleware/             # Middleware components
+│   └── auth_middleware.go  # JWT authentication middleware
+├── router/                 # API routes definition
+│   └── router.go           # Routes configuration
+├── docs/                   # Documentation
+│   └── api_documentation.md # API documentation
+└── go.mod                  # Go module definition
 ```
 
 ## Features
 
+- User authentication with JWT tokens
+- Role-based access control (admin and regular users)
 - Create, read, update, and delete tasks
 - RESTful API design
+- MongoDB database integration
 - JSON responses
 - Error handling
 
+## Authentication System
+
+- **JWT-based authentication**: Secure API access using JSON Web Tokens
+- **Role-based access control**: 
+  - Admin users: Can perform all operations (GET, POST, PUT, DELETE)
+  - Regular users: Can only perform read operations (GET)
+- **User registration and login endpoints**
+- **Token validation middleware** for protected routes
+
 ## API Endpoints
 
-| Method | Endpoint    | Description       |
-|--------|-------------|-------------------|
-| GET    | /health     | Health check      |
-| GET    | /tasks      | List all tasks    |
-| GET    | /tasks/:id  | Get a single task |
-| POST   | /tasks      | Create a task     |
-| PUT    | /tasks/:id  | Update a task     |
-| DELETE | /tasks/:id  | Delete a task     |
+### Authentication Endpoints
+
+| Method | Endpoint     | Description      | Access      |
+|--------|-------------|------------------|------------|
+| POST   | /register   | Register new user | Public     |
+| POST   | /login      | User login       | Public     |
+
+### Task Endpoints
+
+| Method | Endpoint    | Description       | Access                 |
+|--------|-------------|-------------------|------------------------|
+| GET    | /health     | Health check      | Public                 |
+| GET    | /tasks      | List user's tasks | Authenticated          |
+| GET    | /tasks/:id  | Get a single task | Authenticated          |
+| POST   | /tasks      | Create a task     | Admin only             |
+| PUT    | /tasks/:id  | Update a task     | Admin only             |
+| DELETE | /tasks/:id  | Delete a task     | Admin only             |
 
 ## Getting Started
 
 1. Clone the repository
 2. Navigate to the project directory
-3. Run the application:
+3. Make sure MongoDB is running locally or set the `MONGODB_URI` environment variable
+4. For production, set the `JWT_SECRET` environment variable (defaults to a test value otherwise)
+5. Run the application:
    ```
    go run main.go
    ```
-4. The API will be available at `http://localhost:8080`
+6. The API will be available at `http://localhost:8080`
+
+## Authentication Flow
+
+1. Register a user:
+   ```bash
+   curl -X POST http://localhost:8080/register \
+     -H "Content-Type: application/json" \
+     -d '{"username": "user1", "password": "password123", "role": "user"}'
+   ```
+
+2. Login to get a JWT token:
+   ```bash
+   curl -X POST http://localhost:8080/login \
+     -H "Content-Type: application/json" \
+     -d '{"username": "user1", "password": "password123"}'
+   ```
+
+3. Use the token in authenticated requests:
+   ```bash
+   curl -X GET http://localhost:8080/tasks \
+     -H "Authorization: Bearer <your-jwt-token>"
+   ```
+
+## User Roles
+
+- **Admin**: Create, read, update, and delete any task
+- **User**: Read tasks created by themselves
+
+## Data Models
+
+### User Model
+
+| Field        | Type      | Description                    |
+|-------------|-----------|--------------------------------|
+| id          | ObjectID  | Unique identifier              |
+| username    | string    | User's unique username         |
+| password    | string    | Hashed password (not returned) |
+| role        | string    | User role (admin/user)         |
+| created_at  | timestamp | User creation time             |
+| last_login_at | timestamp | Last login time              |
+
+### Task Model
+
+| Field       | Type       | Description                  |
+|-------------|------------|------------------------------|
+| id          | ObjectID   | Unique identifier            |
+| title       | string     | Task title                   |
+| description | string     | Task description             |
+| completed   | boolean    | Completion status            |
+| created_at  | timestamp  | Task creation time           |
+| updated_at  | timestamp  | Last update time             |
+| user_id     | ObjectID   | ID of task creator           |
 
 ## Documentation
 
-Detailed API documentation is available in two places:
-- Local: See the [API documentation file](docs/api_documentation.md)
-- Online: [Postman Documentation](https://documenter.getpostman.com/view/34870519/2sB2ixjtd5)
+Detailed API documentation is available in the [API documentation file](docs/api_documentation.md)
 
-## Task Model
+## Environment Variables
 
-| Field       | Type    | Description                         |
-|-------------|---------|-------------------------------------|
-| id          | integer | Unique identifier                   |
-| title       | string  | Task title                          |
-| description | string  | Task description                    |
-| completed   | boolean | Completion status (true/false)      |
-
-## Example Request
-
-```bash
-# Create a new task
-curl -X POST http://localhost:8080/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "New Task", "description": "Task description", "completed": false}'
-```
+| Name         | Description                      | Default                    |
+|-------------|----------------------------------|----------------------------|
+| MONGODB_URI  | MongoDB connection string        | mongodb://localhost:27017  |
+| JWT_SECRET   | Secret for signing JWT tokens    | your-secret-key (for dev)  |
